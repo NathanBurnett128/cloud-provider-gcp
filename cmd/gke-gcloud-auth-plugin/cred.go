@@ -85,8 +85,10 @@ func newPlugin(tokenProvider tokenProvider) *plugin {
 var (
 	useApplicationDefaultCredentials = pflag.Bool("use_application_default_credentials", false, "Output is an ExecCredential filled with application default credentials.")
 	useEdgeCloud                     = pflag.Bool("use_edge_cloud", false, "Output is an ExecCredential for an Edge Cloud cluster.")
+	project                          = pflag.String("project", "", "Parent project of the Cluster.")
 	location                         = pflag.String("location", "", "Location of the Cluster.")
 	cluster                          = pflag.String("cluster", "", "Name of the Cluster.")
+	impersonateServiceAccount        = pflag.String("impersonate_service_account", "", "Impersonate a service account to retrieve tokens for the Cluster.")
 )
 
 func main() {
@@ -99,14 +101,16 @@ func main() {
 
 	var tokenProvider tokenProvider = nil
 	if *useEdgeCloud {
-		if *location == "" || *cluster == "" {
-			klog.Exit(fmt.Errorf("for --use_edge_cloud: --location and --cluster are required"))
+		if *project == "" || *location == "" || *cluster == "" {
+			klog.Exit(fmt.Errorf("for --use_edge_cloud: --project, --location and --cluster are required"))
 		}
 
 		tokenProvider = &gcloudEdgeCloudTokenProvider{
-			location:    *location,
-			clusterName: *cluster,
-			getTokenRaw: getGcloudEdgeCloudTokenRaw,
+			project:                   *project,
+			location:                  *location,
+			clusterName:               *cluster,
+			impersonateServiceAccount: *impersonateServiceAccount,
+			getTokenRaw:               getGcloudEdgeCloudTokenRaw,
 		}
 	} else if *useApplicationDefaultCredentials {
 		tokenProvider = &defaultCredentialsTokenProvider{
